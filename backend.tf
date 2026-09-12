@@ -1,7 +1,8 @@
 terraform {
   backend "s3" {
-    bucket       = "my-company-terraform-state"
-    key          = "infrastructure/terraform.tfstate"
+    bucket       = "ts-academy-state-file"
+    key          = "tf-academy.tfstate"
     region       = "us-east-1"
   }
 }
+
