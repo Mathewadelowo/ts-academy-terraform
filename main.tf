@@ -81,6 +81,7 @@ resource "aws_route_table" "ts_private_rt" {
     Name = "example"
   }
 }
+
 resource "aws_route_table" "ts_database_rt" {
   vpc_id = aws_vpc.ts_vpc.id
 
@@ -120,7 +121,7 @@ resource "aws_nat_gateway" "ts_ng" {
 }
 
 resource "aws_default_security_group" "public_server" {
-  vpc_id = aws_vpc.mainvpc.id
+  vpc_id = aws_vpc.ts_vpc.id
 
   ingress {
     protocol  = tcp
@@ -138,7 +139,7 @@ resource "aws_default_security_group" "public_server" {
 }
 
 resource "aws_default_security_group" "private_server" {
-  vpc_id = aws_vpc.mainvpc.id
+  vpc_id = aws_vpc.ts_vpc.id
 
   ingress {
     protocol  = tcp
@@ -157,7 +158,7 @@ resource "aws_default_security_group" "private_server" {
 
 
 resource "aws_default_security_group" "database_server" {
-  vpc_id = aws_vpc.mainvpc.id
+  vpc_id = aws_vpc.ts_vpc.id
 
   ingress {
     protocol  = tcp
@@ -194,7 +195,7 @@ data "aws_ami" "ubuntu" {
 resource "aws_instance" "ts_frontend_server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
-
+  vpc_security_group_ids = [aws_default_security_group.public_server.id]
   tags = {
     Name = "frontend server"
   }
@@ -203,6 +204,7 @@ resource "aws_instance" "ts_frontend_server" {
 resource "aws_instance" "ts_backend_server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
+  vpc_security_group_ids = [aws_default_security_group.private_server.id]
 
   tags = {
     Name = "backend server"
