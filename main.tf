@@ -26,8 +26,9 @@ resource "aws_subnet" "ts_public_subnet" {
 }
 
 resource "aws_subnet" "ts_private_subnet" {
+  availability_zone = "us-east-1a"
   vpc_id     = aws_vpc.ts_vpc.id
- cidr_block        	= "${cidrsubnet(aws_vpc.ts_vpc.cidr_block, 5, 1)}"
+  cidr_block        	= "${cidrsubnet(aws_vpc.ts_vpc.cidr_block, 5, 1)}"
 
   tags = {
     Name = "ts private subnet"
@@ -36,8 +37,9 @@ resource "aws_subnet" "ts_private_subnet" {
 
 resource "aws_subnet" "ts_database_subnet" {
   vpc_id     = aws_vpc.ts_vpc.id
- cidr_block        	= "${cidrsubnet(aws_vpc.ts_vpc.cidr_block, 7, 1)}"
-
+  availability_zone = "us-east-1b"
+  cidr_block        	= "${cidrsubnet(aws_vpc.ts_vpc.cidr_block, 7, 1)}"
+ 
   tags = {
     Name = "ts database subnet"
   }
@@ -220,7 +222,7 @@ resource "aws_db_instance" "ts_db" {
   engine               = "mysql"
   engine_version       = "8.0"
   instance_class       = "db.t3.micro"
-  username             =  "my-ts-user"
+  username             =  "mytsuser"
   password             = "foobarbaz"
   parameter_group_name = "default.mysql8.0"
   skip_final_snapshot  = true
