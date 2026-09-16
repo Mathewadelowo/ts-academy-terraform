@@ -99,9 +99,14 @@ resource "aws_route_table_association" "ts_database_association" {
   route_table_id = aws_route_table.ts_database_rt.id
 }
 
+resource "aws_eip" "example" {
+  count  = 2
+  domain = "vpc"
+}
 
 resource "aws_nat_gateway" "ts_ng" {
   subnet_id     = aws_subnet.ts_public_subnet.id
+  allocation_id   = [aws_eip.example[0].id]
 
   tags = {
     Name = "gw NAT"
