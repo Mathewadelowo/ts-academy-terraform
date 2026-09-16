@@ -106,7 +106,7 @@ resource "aws_eip" "example" {
 
 resource "aws_nat_gateway" "ts_ng" {
   subnet_id     = aws_subnet.ts_public_subnet.id
-  allocation_id   = [aws_eip.example[0].id]
+  allocation_id   = aws_eip.example[0].id
 
   tags = {
     Name = "gw NAT"
