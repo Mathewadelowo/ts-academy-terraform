@@ -18,7 +18,7 @@ resource "aws_vpc" "ts_vpc" {
 
 resource "aws_subnet" "ts_public_subnet" {
   vpc_id     = aws_vpc.ts_vpc.id
-  cidr_block = "10.0.0.0/24"
+  cidr_block        	= "${cidrsubnet(aws_vpc.ts_vpc.cidr_block, 3, 1)}"
 
   tags = {
     Name = "ts public subnet"
@@ -27,7 +27,7 @@ resource "aws_subnet" "ts_public_subnet" {
 
 resource "aws_subnet" "ts_private_subnet" {
   vpc_id     = aws_vpc.ts_vpc.id
-  cidr_block = "10.1.0.0/24"
+ cidr_block        	= "${cidrsubnet(aws_vpc.ts_vpc.cidr_block, 5, 1)}"
 
   tags = {
     Name = "ts private subnet"
@@ -36,7 +36,7 @@ resource "aws_subnet" "ts_private_subnet" {
 
 resource "aws_subnet" "ts_database_subnet" {
   vpc_id     = aws_vpc.ts_vpc.id
-  cidr_block = "10.3.0.0/24"
+ cidr_block        	= "${cidrsubnet(aws_vpc.ts_vpc.cidr_block, 7, 1)}"
 
   tags = {
     Name = "ts database subnet"
@@ -81,7 +81,11 @@ resource "aws_route_table" "ts_private_rt" {
 resource "aws_route_table" "ts_database_rt" {
   vpc_id = aws_vpc.ts_vpc.id
 
-
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = "local"
+  }
+  
   tags = {
     Name = "database rt"
   }
