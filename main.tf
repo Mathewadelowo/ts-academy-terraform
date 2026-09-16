@@ -68,10 +68,7 @@ resource "aws_route_table" "ts_public_rt" {
 resource "aws_route_table" "ts_private_rt" {
   vpc_id = aws_vpc.ts_vpc.id
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = "local"
-  }
+
 
   tags = {
     Name = "example"
@@ -81,10 +78,6 @@ resource "aws_route_table" "ts_private_rt" {
 resource "aws_route_table" "ts_database_rt" {
   vpc_id = aws_vpc.ts_vpc.id
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = "local"
-  }
 
   tags = {
     Name = "database rt"
