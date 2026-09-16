@@ -205,7 +205,7 @@ resource "aws_instance" "ts_backend_server" {
   instance_type = "t3.micro"
 
   tags = {
-    Name = backend server"
+    Name = "backend server"
   }
 }
 
