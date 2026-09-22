@@ -1,47 +1,82 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 6.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = "us-east-1"
-}
-
-
 resource "aws_vpc" "ts_vpc" {
-  cidr_block = "10.0.0.0/16"
-}
-
-resource "aws_subnet" "ts_public_subnet" {
-  vpc_id     = aws_vpc.ts_vpc.id
-  cidr_block        	= "${cidrsubnet(aws_vpc.ts_vpc.cidr_block, 3, 1)}"
-
+  cidr_block = var.vpc_cidr
   tags = {
-    Name = "ts public subnet"
+    Name = "ts-vpc"
   }
 }
 
-resource "aws_subnet" "ts_private_subnet" {
-  availability_zone = "us-east-1a"
-  vpc_id     = aws_vpc.ts_vpc.id
-  cidr_block        	= "${cidrsubnet(aws_vpc.ts_vpc.cidr_block, 5, 1)}"
+
+# =========================
+# PUBLIC SUBNETS
+# =========================
+
+resource "aws_subnet" "ts_public_subnet_1" {
+  vpc_id            = aws_vpc.ts_vpc.id
+  availability_zone = data.aws_availability_zones.available.names[0]
+  cidr_block        = "10.0.1.0/24"
 
   tags = {
-    Name = "ts private subnet"
+    Name = "ts public subnet 1"
   }
 }
 
-resource "aws_subnet" "ts_database_subnet" {
-  vpc_id     = aws_vpc.ts_vpc.id
-  availability_zone = "us-east-1b"
-  cidr_block        	= "${cidrsubnet(aws_vpc.ts_vpc.cidr_block, 7, 1)}"
- 
+resource "aws_subnet" "ts_public_subnet_2" {
+  vpc_id            = aws_vpc.ts_vpc.id
+  availability_zone = data.aws_availability_zones.available.names[1]
+  cidr_block        = "10.0.2.0/24"
+
   tags = {
-    Name = "ts database subnet"
+    Name = "ts public subnet 2"
+  }
+}
+
+
+# =========================
+# PRIVATE BACKEND SUBNETS
+# =========================
+
+resource "aws_subnet" "ts_backend_subnet_1" {
+  vpc_id            = aws_vpc.ts_vpc.id
+  availability_zone = data.aws_availability_zones.available.names[0]
+  cidr_block        = "10.0.11.0/24"
+
+  tags = {
+    Name = "ts backend subnet 1"
+  }
+}
+
+resource "aws_subnet" "ts_backend_subnet_2" {
+  vpc_id            = aws_vpc.ts_vpc.id
+  availability_zone = data.aws_availability_zones.available.names[1]
+  cidr_block        = "10.0.12.0/24"
+
+  tags = {
+    Name = "ts backend subnet 2"
+  }
+}
+
+
+# =========================
+# PRIVATE DATABASE SUBNETS
+# =========================
+
+resource "aws_subnet" "ts_database_subnet_1" {
+  vpc_id            = aws_vpc.ts_vpc.id
+  availability_zone = data.aws_availability_zones.available.names[0]
+  cidr_block        = "10.0.21.0/24"
+
+  tags = {
+    Name = "ts database subnet 1"
+  }
+}
+
+resource "aws_subnet" "ts_database_subnet_2" {
+  vpc_id            = aws_vpc.ts_vpc.id
+  availability_zone = data.aws_availability_zones.available.names[1]
+  cidr_block        = "10.0.22.0/24"
+
+  tags = {
+    Name = "ts database subnet 2"
   }
 }
 
@@ -53,6 +88,11 @@ resource "aws_internet_gateway" "ts_gw" {
   }
 }
 
+
+# =========================
+# PUBLIC ROUTE TABLE
+# =========================
+
 resource "aws_route_table" "ts_public_rt" {
   vpc_id = aws_vpc.ts_vpc.id
 
@@ -61,169 +101,256 @@ resource "aws_route_table" "ts_public_rt" {
     gateway_id = aws_internet_gateway.ts_gw.id
   }
 
-
   tags = {
     Name = "ts public rt"
   }
 }
 
-resource "aws_route_table" "ts_private_rt" {
+
+# =========================
+# BACKEND ROUTE TABLE
+# =========================
+
+resource "aws_route_table" "ts_backend_rt" {
   vpc_id = aws_vpc.ts_vpc.id
 
-
-
   tags = {
-    Name = "example"
+    Name = "ts backend rt"
   }
 }
+
+
+# =========================
+# DATABASE ROUTE TABLE
+# =========================
 
 resource "aws_route_table" "ts_database_rt" {
   vpc_id = aws_vpc.ts_vpc.id
 
-
   tags = {
-    Name = "database rt"
+    Name = "ts database rt"
   }
 }
 
-resource "aws_route_table_association" "ts_public_association" {
-  subnet_id      = aws_subnet.ts_public_subnet.id
+# Public subnet associations
+
+resource "aws_route_table_association" "ts_public_association_1" {
+  subnet_id      = aws_subnet.ts_public_subnet_1.id
   route_table_id = aws_route_table.ts_public_rt.id
 }
 
-resource "aws_route_table_association" "ts_private_association" {
-  subnet_id      = aws_subnet.ts_private_subnet.id
-  route_table_id = aws_route_table.ts_private_rt.id
+resource "aws_route_table_association" "ts_public_association_2" {
+  subnet_id      = aws_subnet.ts_public_subnet_2.id
+  route_table_id = aws_route_table.ts_public_rt.id
 }
 
-resource "aws_route_table_association" "ts_database_association" {
-  subnet_id      = aws_subnet.ts_database_subnet.id
+
+# Backend subnet associations
+
+resource "aws_route_table_association" "ts_backend_association_1" {
+  subnet_id      = aws_subnet.ts_backend_subnet_1.id
+  route_table_id = aws_route_table.ts_backend_rt.id
+}
+
+resource "aws_route_table_association" "ts_backend_association_2" {
+  subnet_id      = aws_subnet.ts_backend_subnet_2.id
+  route_table_id = aws_route_table.ts_backend_rt.id
+}
+
+
+# Database subnet associations
+
+resource "aws_route_table_association" "ts_database_association_1" {
+  subnet_id      = aws_subnet.ts_database_subnet_1.id
   route_table_id = aws_route_table.ts_database_rt.id
 }
 
-resource "aws_eip" "example" {
-  count  = 2
+resource "aws_route_table_association" "ts_database_association_2" {
+  subnet_id      = aws_subnet.ts_database_subnet_2.id
+  route_table_id = aws_route_table.ts_database_rt.id
+}
+
+
+
+## Security group
+resource "aws_security_group" "ts_frontend_sg" {
+  name        = "ts-frontend-sg"
+  description = "Security group for frontend traffic"
+  vpc_id      = aws_vpc.ts_vpc.id
+
+  ingress {
+    description = "Allow HTTP from internet"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow HTTPS from internet"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "ts frontend sg"
+  }
+}
+
+
+#Applicatin /Backend security group
+resource "aws_security_group" "ts_backend_sg" {
+  name        = "ts-backend-sg"
+  description = "Security group for backend servers"
+  vpc_id      = aws_vpc.ts_vpc.id
+
+  ingress {
+    description     = "Allow backend traffic from frontend"
+    from_port       = 8000
+    to_port         = 8000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ts_frontend_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "ts backend sg"
+  }
+}
+
+
+resource "aws_security_group" "ts_database_sg" {
+  name        = "ts-database-sg"
+  description = "Security group for PostgreSQL database"
+  vpc_id      = aws_vpc.ts_vpc.id
+
+  ingress {
+    description     = "Allow PostgreSQL from backend"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ts_backend_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "ts database sg"
+  }
+}
+
+
+# Eip
+resource "aws_eip" "ts_nat_eip" {
   domain = "vpc"
-}
-
-resource "aws_nat_gateway" "ts_ng" {
-  subnet_id     = aws_subnet.ts_public_subnet.id
-  allocation_id   = aws_eip.example[0].id
 
   tags = {
-    Name = "gw NAT"
-  }
-  depends_on = [aws_internet_gateway.ts_gw]
-}
-
-resource "aws_default_security_group" "public_server" {
-  vpc_id = aws_vpc.ts_vpc.id
-
-  ingress {
-    protocol  = "tcp"
-    self      = true
-    from_port = 80
-    to_port   = 80
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_default_security_group" "private_server" {
-  vpc_id = aws_vpc.ts_vpc.id
-
-  ingress {
-    protocol  = "tcp"
-    self      = true
-    from_port = 443
-    to_port   = 443
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    Name = "ts nat eip"
   }
 }
 
 
-resource "aws_default_security_group" "database_server" {
-  vpc_id = aws_vpc.ts_vpc.id
+# Creating Nat gateway
+resource "aws_nat_gateway" "ts_nat_gw" {
+  allocation_id = aws_eip.ts_nat_eip.id
+  subnet_id     = aws_subnet.ts_public_subnet_1.id
 
-  ingress {
-    protocol  = "tcp"
-    self      = true
-    from_port = 3306
-    to_port   = 3306
+  tags = {
+    Name = "ts nat gateway"
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  depends_on = [
+    aws_internet_gateway.ts_gw
+  ]
 }
 
 
-data "aws_ami" "ubuntu" {
-  most_recent = true
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-
-  owners = ["099720109477"] # Canonical
+# Route from private App subnet to NAT Gateway
+resource "aws_route" "ts_backend_nat_route" {
+  route_table_id         = aws_route_table.ts_backend_rt.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.ts_nat_gw.id
 }
 
+
+
+# Compute
 resource "aws_instance" "ts_frontend_server" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
-  vpc_security_group_ids = [aws_default_security_group.public_server.id]
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t3.micro"
+  subnet_id              = aws_subnet.ts_public_subnet_1.id
+  vpc_security_group_ids = [aws_security_group.ts_frontend_sg.id]
+
   tags = {
-    Name = "frontend server"
+    Name = "ts frontend server"
   }
 }
 
+
+# Backend server
 resource "aws_instance" "ts_backend_server" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
-  vpc_security_group_ids = [aws_default_security_group.private_server.id]
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t3.micro"
+  subnet_id              = aws_subnet.ts_backend_subnet_1.id
+  vpc_security_group_ids = [aws_security_group.ts_backend_sg.id]
 
   tags = {
-    Name = "backend server"
+    Name = "ts backend server"
   }
 }
 
 resource "aws_db_subnet_group" "ts_rds_subnet_group" {
-  name       = "ts_subnet"
-  subnet_ids = [aws_subnet.ts_private_subnet.id, aws_subnet.ts_database_subnet.id]
+  name = "ts-subnet"
+
+  subnet_ids = [
+    aws_subnet.ts_database_subnet_1.id,
+    aws_subnet.ts_database_subnet_2.id
+  ]
 
   tags = {
-    Name = "My DB subnet group"
+    Name = "ts database subnet group"
   }
 }
 
 resource "aws_db_instance" "ts_db" {
-  allocated_storage    = 10
-  db_name              = "my_ts_db"
-  engine               = "mysql"
-  engine_version       = "8.0"
-  instance_class       = "db.t3.micro"
-  username             =  "mytsuser"
-  password             = "foobarbaz"
-  parameter_group_name = "default.mysql8.0"
-  skip_final_snapshot  = true
+  allocated_storage = 20
+
+  db_name        = "my_ts_db"
+  engine         = "postgres"
+  engine_version = "16"
+
+  instance_class = "db.t3.micro"
+
+  username = "mytsuser"
+  password = var.db_password
+
+  db_subnet_group_name   = aws_db_subnet_group.ts_rds_subnet_group.name
+  vpc_security_group_ids = [aws_security_group.ts_database_sg.id]
+
+  publicly_accessible = false
+  skip_final_snapshot = true
+
+  tags = {
+    Name = "ts postgres database"
+  }
 }
